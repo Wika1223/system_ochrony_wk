@@ -9,6 +9,7 @@ while True:
     print('1 - wyświetl firmy ochroniarskie')
     print('2 - dodaj firmę ochroniarską')
     print('3 - usuń firmę ochroniarską')
+    print('4 - zaaktualizuj dane firmy ')
     choose = input('wybierz opcję: ')
 
     if choose == '0':
@@ -19,3 +20,5 @@ while True:
         add_company(companies)
     if choose == '3':
         remove_company(companies)
+    if choose == '4':
+        update_company(companies)
