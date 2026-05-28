@@ -18,3 +18,10 @@ def remove_company(company_data: list) -> None:
     for c in company_data:
         if c[0] == name:
             company_data.remove(c)
+
+def update_company(company_data: list) -> None:
+    name = input('Podaj nazwe firmy do zmiany: ')
+    for c in company_data:
+        if c[0] == name:
+            c[0] = input('Podaj nową nazwę firmy: ')
+            c[1] = input('Podaj nową lokalizację: ')
