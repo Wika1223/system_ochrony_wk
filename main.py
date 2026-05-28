@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 import tkintermapview
-from system_lib.model import Firma, Klient
+from system_lib.model import Firma, Klient, Pracownik
 
 #BAZA
 companies = [
@@ -14,9 +14,15 @@ clients = [
     Klient("Anna", "Nowak", "Gdańsk", "Konsalnet"),
     Klient("Piotr", "Wiśniewski", "Szczecin", "Securitas")]
 
+employees = [
+    Pracownik("Marek", "Wójcik", "Warszawa", "Solid Security", "111-222-333"),
+    Pracownik("Katarzyna", "Kamińska", "Kraków", "Konsalnet", "444-555-666"),
+    Pracownik("Tomasz", "Lewandowski", "Poznań", "Securitas", "777-888-999")]
+
 def zaktualizuj_listy_wyboru():
     nazwy_firm = [f.nazwa for f in companies]
     combobox_firma_klienta['values'] = nazwy_firm
+    combobox_firma_pracownika['values'] = nazwy_firm
 
 
 # FUNKCJE
@@ -147,6 +153,77 @@ def update_client(i):
     entry_lokalizacja_klienta.delete(0, END)
     combobox_firma_klienta.set('')
     show_clients()
+    filtruj_mape()
+
+# PRACOWNICY
+def show_employees():
+    listbox_pracownicy.delete(0, END)
+    for idx, pracownik in enumerate(employees):
+        listbox_pracownicy.insert(idx, f"{pracownik.imie} {pracownik.nazwisko}")
+
+def add_employee():
+    new_employee = Pracownik(
+        imie=entry_imie_pracownika.get(), nazwisko=entry_nazwisko_pracownika.get(),
+        telefon=entry_telefon_pracownika.get(), lokalizacja=entry_lokalizacja_pracownika.get(),
+        przypisana_firma=combobox_firma_pracownika.get()
+    )
+    employees.append(new_employee)
+    entry_imie_pracownika.delete(0, END)
+    entry_nazwisko_pracownika.delete(0, END)
+    entry_telefon_pracownika.delete(0, END)
+    entry_lokalizacja_pracownika.delete(0, END)
+    combobox_firma_pracownika.set('')
+    show_employees()
+    filtruj_mape()
+
+def remove_employee():
+    i = listbox_pracownicy.index(ACTIVE)
+    employees.pop(i)
+    show_employees()
+    filtruj_mape()
+
+def show_employee_details():
+    i = listbox_pracownicy.index(ACTIVE)
+    label_det_prac_imie_val.config(text=employees[i].imie)
+    label_det_prac_nazw_val.config(text=employees[i].nazwisko)
+    label_det_prac_tel_val.config(text=employees[i].telefon)
+    label_det_prac_lok_val.config(text=employees[i].lokalizacja)
+    label_det_prac_firma_val.config(text=employees[i].przypisana_firma)
+    if employees[i].coordinates:
+        map_widget.set_position(employees[i].coordinates[0], employees[i].coordinates[1])
+        map_widget.set_zoom(12)
+
+def edit_employee():
+    i = listbox_pracownicy.index(ACTIVE)
+    entry_imie_pracownika.delete(0, END)
+    entry_nazwisko_pracownika.delete(0, END)
+    entry_telefon_pracownika.delete(0, END)
+    entry_lokalizacja_pracownika.delete(0, END)
+    combobox_firma_pracownika.set('')
+
+    entry_imie_pracownika.insert(0, employees[i].imie)
+    entry_nazwisko_pracownika.insert(0, employees[i].nazwisko)
+    entry_telefon_pracownika.insert(0, employees[i].telefon)
+    entry_lokalizacja_pracownika.insert(0, employees[i].lokalizacja)
+    combobox_firma_pracownika.set(employees[i].przypisana_firma)
+
+    button_dodaj_pracownika.config(text="Zapisz zmiany", command=lambda: update_employee(i))
+
+def update_employee(i):
+    employees[i].imie = entry_imie_pracownika.get()
+    employees[i].nazwisko = entry_nazwisko_pracownika.get()
+    employees[i].telefon = entry_telefon_pracownika.get()
+    employees[i].lokalizacja = entry_lokalizacja_pracownika.get()
+    employees[i].przypisana_firma = combobox_firma_pracownika.get()
+    employees[i].coordinates = employees[i].get_coordinates()
+
+    button_dodaj_pracownika.config(text="Dodaj pracownika", command=add_employee)
+    entry_imie_pracownika.delete(0, END)
+    entry_nazwisko_pracownika.delete(0, END)
+    entry_telefon_pracownika.delete(0, END)
+    entry_lokalizacja_pracownika.delete(0, END)
+    combobox_firma_pracownika.set('')
+    show_employees()
     filtruj_mape()
 
 
@@ -282,11 +359,69 @@ Label(ramka_szczegoly_klienci, text="Firma:").grid(row=1, column=6, sticky=W)
 label_det_klient_firma_val = Label(ramka_szczegoly_klienci, text="...")
 label_det_klient_firma_val.grid(row=1, column=7, sticky=W, padx=10)
 
+# PRACOWNICY
+# RAMKI
+ramka_lista_prac = Frame(tab_pracownicy)
+ramka_formularz_prac = Frame(tab_pracownicy)
+ramka_szczegoly_prac = Frame(tab_pracownicy)
+
+ramka_lista_prac.grid(row=0, column=0, padx=20, pady=10, sticky=N)
+ramka_formularz_prac.grid(row=0, column=1, padx=20, pady=10, sticky=N)
+ramka_szczegoly_prac.grid(row=1, column=0, columnspan=2, padx=20, pady=10, sticky=W)
+
+# Lista
+Label(ramka_lista_prac, text="Lista pracowników:").grid(row=0, column=0, sticky=W)
+listbox_pracownicy = Listbox(ramka_lista_prac, width=30)
+listbox_pracownicy.grid(row=1, column=0, columnspan=3, pady=5)
+Button(ramka_lista_prac, text="Szczegóły", command=show_employee_details).grid(row=2, column=0)
+Button(ramka_lista_prac, text="Usuń", command=remove_employee).grid(row=2, column=1)
+Button(ramka_lista_prac, text="Edytuj", command=edit_employee).grid(row=2, column=2)
+
+# Formularz
+Label(ramka_formularz_prac, text="Formularz:").grid(row=0, column=0, columnspan=2, sticky=W)
+Label(ramka_formularz_prac, text="Imię:").grid(row=1, column=0, sticky=W)
+Label(ramka_formularz_prac, text="Nazwisko:").grid(row=2, column=0, sticky=W)
+Label(ramka_formularz_prac, text="Telefon:").grid(row=3, column=0, sticky=W)
+Label(ramka_formularz_prac, text="Lokalizacja:").grid(row=4, column=0, sticky=W)
+Label(ramka_formularz_prac, text="Firma:").grid(row=5, column=0, sticky=W)
+
+entry_imie_pracownika = Entry(ramka_formularz_prac)
+entry_nazwisko_pracownika = Entry(ramka_formularz_prac)
+entry_telefon_pracownika = Entry(ramka_formularz_prac)
+entry_lokalizacja_pracownika = Entry(ramka_formularz_prac)
+combobox_firma_pracownika = ttk.Combobox(ramka_formularz_prac, state='readonly')
+
+entry_imie_pracownika.grid(row=1, column=1)
+entry_nazwisko_pracownika.grid(row=2, column=1)
+entry_telefon_pracownika.grid(row=3, column=1)
+entry_lokalizacja_pracownika.grid(row=4, column=1)
+combobox_firma_pracownika.grid(row=5, column=1)
+
+button_dodaj_pracownika = Button(ramka_formularz_prac, text="Dodaj pracownika", command=add_employee)
+button_dodaj_pracownika.grid(row=6, column=0, columnspan=2, pady=10)
+
+# Szczegóły
+Label(ramka_szczegoly_prac, text="Szczegóły pracownika:").grid(row=0, column=0, sticky=W)
+Label(ramka_szczegoly_prac, text="Imię:").grid(row=1, column=0, sticky=W)
+label_det_prac_imie_val = Label(ramka_szczegoly_prac, text="...")
+label_det_prac_imie_val.grid(row=1, column=1, sticky=W, padx=10)
+Label(ramka_szczegoly_prac, text="Nazwisko:").grid(row=1, column=2, sticky=W)
+label_det_prac_nazw_val = Label(ramka_szczegoly_prac, text="...")
+label_det_prac_nazw_val.grid(row=1, column=3, sticky=W, padx=10)
+Label(ramka_szczegoly_prac, text="Telefon:").grid(row=1, column=4, sticky=W)
+label_det_prac_tel_val = Label(ramka_szczegoly_prac, text="...")
+label_det_prac_tel_val.grid(row=1, column=5, sticky=W, padx=10)
+Label(ramka_szczegoly_prac, text="Lokalizacja:").grid(row=2, column=0, sticky=W)
+label_det_prac_lok_val = Label(ramka_szczegoly_prac, text="...")
+label_det_prac_lok_val.grid(row=2, column=1, sticky=W, padx=10)
+Label(ramka_szczegoly_prac, text="Firma:").grid(row=2, column=2, sticky=W)
+label_det_prac_firma_val = Label(ramka_szczegoly_prac, text="...")
+label_det_prac_firma_val.grid(row=2, column=3, sticky=W, padx=10)
 
 
 # FILTROWANIE MAPY - ZAKŁADKI
 def filtruj_mape(event=None):
-    for lista in [companies, clients]:
+    for lista in [companies, clients, employees]:
         for obiekt in lista:
             if hasattr(obiekt, 'marker') and obiekt.marker is not None:
                 try:
@@ -301,10 +436,18 @@ def filtruj_mape(event=None):
     elif wybrana_zakladka == "KLIENCI":
         for k in clients:
             k.marker = map_widget.set_marker(k.coordinates[0], k.coordinates[1], text=f"Klient: {k.imie} {k.nazwisko}")
+    elif wybrana_zakladka == "PRACOWNICY":
+        for p in employees:
+            p.marker = map_widget.set_marker(p.coordinates[0], p.coordinates[1],
+                                             text=f"Pracownik: {p.imie} {p.nazwisko}")
 
+
+
+notebook.bind("<<NotebookTabChanged>>", filtruj_mape)
 # START
 show_companies()
 show_clients()
+show_employees()
 
 filtruj_mape()
 root.mainloop()
